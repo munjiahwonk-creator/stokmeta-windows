@@ -1,0 +1,57 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'stokmeta_windows/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: stokmeta_windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Buat folder windows bila belum ada (lib dan pubspec dipertahankan)
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          Copy-Item lib lib_bak -Recurse
+          Copy-Item pubspec.yaml pubspec_bak.yaml
+          flutter create --platforms=windows --project-name stokmeta_windows .
+          Remove-Item lib -Recurse -Force
+          Move-Item lib_bak lib
+          Move-Item pubspec_bak.yaml pubspec.yaml -Force
+
+      - run: flutter pub get
+
+      - run: flutter build windows --release
+
+      - name: Sertakan ffmpeg.exe (untuk mengambil frame video)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -OutFile ff.zip
+          Expand-Archive ff.zip -DestinationPath ff
+          $exe = Get-ChildItem -Recurse ff -Filter ffmpeg.exe | Select-Object -First 1
+          Copy-Item $exe.FullName build\windows\x64\runner\Release\ffmpeg.exe
+
+      - name: Kemas ZIP
+        shell: pwsh
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath StokMeta-Windows.zip -Force
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-${{ github.run_number }}
+          name: Stok Meta Windows build ${{ github.run_number }}
+          files: stokmeta_windows/StokMeta-Windows.zip
