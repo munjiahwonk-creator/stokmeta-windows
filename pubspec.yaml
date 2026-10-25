@@ -1,0 +1,19 @@
+name: stokmeta_windows
+description: Stok Meta untuk Windows - judul, keyword, dan kategori otomatis untuk Adobe Stock.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  image: ^4.2.0
+  path: ^1.9.0
+  shared_preferences: ^2.3.0
+  file_picker: ^8.1.0
+
+flutter:
+  uses-material-design: true
